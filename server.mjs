@@ -1,8 +1,8 @@
 import 'dotenv/config'
 
 import express from 'express'
-import {fileURLToPath} from 'url'
-import {dirname} from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
 import path from 'path'
 import cors from 'cors'
 
@@ -25,8 +25,8 @@ app.use(express.json())
 app.use(cors(corsOptions))
 app.use('/', express.static(path.join(__dirname, 'public')))
 
-app.use('/users', UsersRouter)
-app.use('/users', UsersRouterA)
+app.use('/', UsersRouter)
+app.use('/', UsersRouterA)
 app.use('/u', LockerRouter)
 app.use('/u', UFlashcardsRouter)
 app.use('/u', TodoRouter)
@@ -34,6 +34,6 @@ app.use('/u', SubjectRouter)
 app.use('/r', FlashcardRouter)
 app.use('/r', ImageRouter)
 
-app.listen(PORT, ()=>{
+app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`)
 })

@@ -3,7 +3,7 @@ import usersController from '../controllers/usersController.mjs'
 
 const router = Router()
 
-router.route('/')
+router.route('/users')
     .patch(usersController.updateUser)
     .delete(usersController.deleteUser)
 
