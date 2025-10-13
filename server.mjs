@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import path from 'path'
 import cors from 'cors'
+import mongoose from 'mongoose'
 
 import UsersRouter from './routes/usersRoutes.mjs'
 import UsersRouterA from './routes/usersRoutesA.mjs'
@@ -21,6 +22,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 import { corsOptions } from './config/corsOptions.mjs'
 
+import { DBConn } from './middleware/DBConn.mjs'
+
 app.use(express.json())
 app.use(cors(corsOptions))
 app.use('/', express.static(path.join(__dirname, 'public')))
@@ -34,6 +37,17 @@ app.use('/u', SubjectRouter)
 app.use('/r', FlashcardRouter)
 app.use('/r', ImageRouter)
 
-app.listen(PORT, () => {
-    console.log(`Server listening on ${PORT}`)
+
+
+DBConn()
+
+mongoose.connection.once('open', () => {
+    console.log('Connected to DB')
+    app.listen(PORT, () => {
+        console.log(`Server listening on ${PORT}`)
+    })
+})
+
+mongoose.connection.on('error', e => {
+    console.error(e)
 })
