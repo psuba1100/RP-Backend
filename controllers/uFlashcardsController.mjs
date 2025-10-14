@@ -1,7 +1,13 @@
 import expressAsyncHandler from "express-async-handler";
+import UserData from "../models/UserData.mjs";
 
 const getFlashcards = expressAsyncHandler(async (req, res) => {
+    console.log('received')
+    const userData = await UserData.findById(req.dataId).lean().exec()
+    console.log(userData)
+    console.log(req.dataId)
 
+    return res.status(200).json(userData)
 })
 
 const createFlashcardReference = expressAsyncHandler(async (req, res) => {

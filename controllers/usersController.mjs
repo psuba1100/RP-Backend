@@ -11,6 +11,11 @@ const createNewUser = expressAsyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'All fields are required' })
     }
 
+    const duplicate = await User.findOne({ username }).lean().exec()
+    if (duplicate) {
+        return res.status(400).json({ message: 'User with this username already exists' })
+    }
+
     const session = await mongoose.startSession()
     session.startTransaction()
 
@@ -40,13 +45,13 @@ const createNewUser = expressAsyncHandler(async (req, res) => {
 
         await session.commitTransaction()
         session.endSession();
-        return res.status(201).json({message: 'User created'})
+        return res.status(201).json({ message: 'User created' })
     }
     catch (e) {
         await session.abortTransaction()
         session.endSession()
         console.error(e)
-        return res.status(500).json({message: 'Creating user failed'})
+        return res.status(500).json({ message: 'Creating user failed' })
     }
 })
 

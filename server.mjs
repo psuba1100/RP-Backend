@@ -15,6 +15,7 @@ import TodoRouter from './routes/u/todoRoutes.mjs'
 import SubjectRouter from './routes/u/subjectRoutes.mjs'
 import FlashcardRouter from './routes/r/flashcardRoutes.mjs'
 import ImageRouter from './routes/r/imageRoutes.mjs'
+import AuthRouter from './routes/authRoutes.mjs'
 
 const app = express()
 const PORT = process.env.PORT
@@ -36,6 +37,7 @@ app.use('/u', TodoRouter)
 app.use('/u', SubjectRouter)
 app.use('/r', FlashcardRouter)
 app.use('/r', ImageRouter)
+app.use('/auth', AuthRouter)
 
 
 
