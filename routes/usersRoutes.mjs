@@ -4,7 +4,7 @@ import usersController from '../controllers/usersController.mjs'
 
 const router = Router()
 
-router.route('/users')
+router.route('/')
     .post(usersController.createNewUser)
 
 export default router

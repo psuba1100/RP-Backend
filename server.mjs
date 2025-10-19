@@ -6,6 +6,7 @@ import { dirname } from 'path'
 import path from 'path'
 import cors from 'cors'
 import mongoose from 'mongoose'
+import cookieParser from 'cookie-parser'
 
 import UsersRouter from './routes/usersRoutes.mjs'
 import UsersRouterA from './routes/usersRoutesA.mjs'
@@ -26,12 +27,13 @@ import { corsOptions } from './config/corsOptions.mjs'
 import { DBConn } from './middleware/DBConn.mjs'
 
 app.use(express.json())
+app.use(cookieParser())
 app.use(cors(corsOptions))
 app.use('/', express.static(path.join(__dirname, 'public')))
 
-app.use('/', UsersRouter)
-app.use('/', UsersRouterA)
-app.use('/u', LockerRouter)
+app.use('/users', UsersRouter)
+app.use('/users', UsersRouterA)
+app.use('/u/locker', LockerRouter)
 app.use('/u', UFlashcardsRouter)
 app.use('/u', TodoRouter)
 app.use('/u', SubjectRouter)

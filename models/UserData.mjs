@@ -1,28 +1,63 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from 'uuid';
 
-const userDataSchema = new mongoose.Schema(
-    {
-        username: {
-            type: String,
-            required: true
+const userDataSchema = new mongoose.Schema({
+    username: {
+        type: String,
+        required: true,
+    },
+
+    locker: {
+        itemsInLocker: {
+            type: [String],
+            default: [],
         },
-        locker: {
-            type: Map,
-            required: true
+        itemsOutsideLocker: {
+            type: [String],
+            default: [],
         },
-        flashcards: {
-            type: Array,
-            required: true
+    },
+
+    todoTasks: [
+        {
+            id: {
+                type: String,
+                default: uuidv4,
+                unique: true,
+            },
+            title: { type: String, required: true },
+            description: { type: String, default: '' },
+            completed: { type: Boolean, default: false },
+            subject: { type: String, default: '' },
+            dueDate: { type: Date },
         },
-        todoTasks: {
-            type: Array,
-            required: true
+    ],
+
+    subjects: [
+        {
+            subjectName: {
+                type: String,
+                unique: true
+            },
+            boundReferences: {
+                type: Number,
+                default: 0
+            }
+        }
+    ],
+
+    flashcards: {
+        flashcardId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Flashcards'
         },
-        subjects: {
-            type: Array,
-            required: true
+        subject: {
+            type: String
+        },
+        access: {
+            type: String
         }
     }
-)
+});
 
 export default mongoose.model('UserData', userDataSchema)

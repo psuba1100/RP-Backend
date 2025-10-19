@@ -52,8 +52,11 @@ const login = asyncHandler(async (req, res) => {
 const refresh = (req, res) => {
     const cookies = req.cookies
 
+    console.log(cookies)
+
     if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
 
+    console.log('passed')
     const refreshToken = cookies.jwt
 
     jwt.verify(
@@ -70,7 +73,7 @@ const refresh = (req, res) => {
                 {
                     "UserInfo": {
                         "username": foundUser.username,
-                        "roles": foundUser.roles
+                        "dataId": foundUser.dataId
                     }
                 },
                 process.env.ACCESS_TOKEN_SECRET,
