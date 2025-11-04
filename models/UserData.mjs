@@ -1,6 +1,28 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from 'uuid';
 
+const todoTaskSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String,
+        default: ""
+    },
+    completed: {
+        type: Boolean,
+        default: false
+    },
+    subject: {
+        type: String,
+        default: ""
+    },
+    dueDate: {
+        type: Date
+    },
+});
+
 const userDataSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -18,20 +40,10 @@ const userDataSchema = new mongoose.Schema({
         },
     },
 
-    todoTasks: [
-        {
-            id: {
-                type: String,
-                default: uuidv4,
-                unique: true,
-            },
-            title: { type: String, required: true },
-            description: { type: String, default: '' },
-            completed: { type: Boolean, default: false },
-            subject: { type: String, default: '' },
-            dueDate: { type: Date },
-        },
-    ],
+    todoTasks: {
+        type: [todoTaskSchema],
+        default: []
+    },
 
     subjects: [
         {
