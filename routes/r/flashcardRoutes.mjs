@@ -1,7 +1,9 @@
 import { Router } from "express";
 import flashcardController from "../../controllers/flashcardController.mjs";
+import verifyJWT from "../../middleware/verifyJWT.mjs";
 
 const router = Router()
+router.use(verifyJWT)
 
 router.route('/flashcard')
     .post(flashcardController.createNewFlashcard)

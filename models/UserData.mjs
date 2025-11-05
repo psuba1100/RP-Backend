@@ -59,16 +59,21 @@ const userDataSchema = new mongoose.Schema({
     ],
 
     flashcards: {
-        flashcardId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Flashcards'
-        },
-        subject: {
-            type: String
-        },
-        access: {
-            type: String
-        }
+        type: [
+            {
+                flashcardId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Flashcards'
+                },
+                subject: {
+                    type: String
+                },
+                access: {
+                    type: String
+                }
+            }
+        ],
+        default: []
     }
 });
 

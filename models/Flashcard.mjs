@@ -6,7 +6,40 @@ const flashcardSchema = new mongoose.Schema({
         required: true,
         ref: 'UserData'
     },
-    sharedWith: {
-        
-    }
+    sharedWith: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'UserData'
+        }
+    ],
+    title: {
+        type: String
+    },
+    description: {
+        type: String
+    },
+    questions: [
+        {
+            front: {
+                text: {
+                    type: String,
+                    default: ""
+                },
+                image: {
+                    type: String
+                }
+            },
+            back: {
+                text: {
+                    type: String,
+                    default: ""
+                },
+                image: {
+                    type: String
+                }
+            }
+        }
+    ]
 })
+
+export default mongoose.model('Flashcards', flashcardSchema)
