@@ -4,7 +4,34 @@ import Flashcard from "../models/Flashcard.mjs";
 import mongoose from "mongoose";
 
 const getFlashcard = expressAsyncHandler(async (req, res) => {
+    const { dataId } = req
+    const { flashcardId } = req.params
 
+    const flashcard = await Flashcard.findById(flashcardId).lean().exec()
+
+    if(!flashcard){
+        return res.status(404).json({message: 'Requested flashcard set was not found'})
+    }
+
+    const userData = await UserData.findById(dataId).select('flashcards').lean().exec()
+
+    if(!userData){
+        return res.status(403).json({message: 'Faulty user metadata. Please log out and log back in'})
+    }
+
+    const owner = await UserData.findById(flashcard.owner).select('username').lean().exec()
+    const ownerUsername = owner.username
+
+    res.status(200).json({
+        metadata: {
+            title: flashcard.title,
+            description: flashcard.description,
+            owner: ownerUsername,
+            relation: flashcard.owner.toString() == dataId.toString() ? "owner" : "shared",
+            saved: userData.flashcards.some(f => f.flashcardId.toString() == flashcardId)
+        },
+        questions: flashcard.questions
+    })
 })
 
 const createNewFlashcard = expressAsyncHandler(async (req, res) => {
