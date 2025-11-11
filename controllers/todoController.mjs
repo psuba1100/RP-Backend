@@ -32,7 +32,7 @@ const getTasks = expressAsyncHandler(async (req, res) => {
         ...(s ? [{ $match: { "todoTasks.subject": s } }] : []),
 
         { $count: "total" }
-    ]))[0].total
+    ]))[0]?.total || 0
 
     res.json({count, tasks})
 })

@@ -6,7 +6,7 @@ const todoTaskSchema = new mongoose.Schema({
     completed: { type: Boolean, default: false },
     subject: { type: String, default: "" },
     dueDate: { type: Date }
-}, { _id: false });
+}, { _id: true });
 
 const subjectSchema = new mongoose.Schema({
     subjectName: { type: String, unique: true },

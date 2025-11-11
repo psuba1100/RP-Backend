@@ -13,12 +13,12 @@ const login = asyncHandler(async (req, res) => {
     const foundUser = await User.findOne({ username }).exec()
 
     if (!foundUser) {
-        return res.status(401).json({ message: 'Unauthorized' })
+        return res.status(401).json({ message: 'Invalid username' })
     }
 
     const match = await bcrypt.compare(password, foundUser.password)
 
-    if (!match) return res.status(401).json({ message: 'Unauthorized' })
+    if (!match) return res.status(401).json({ message: 'Invalid password' })
 
     const accessToken = jwt.sign(
         {
@@ -46,7 +46,7 @@ const login = asyncHandler(async (req, res) => {
     })
 
     // Send accessToken containing username and roles 
-    res.json({ accessToken })
+    res.status(200).json({ accessToken })
 })
 
 const refresh = (req, res) => {
@@ -89,7 +89,7 @@ const logout = (req, res) => {
     const cookies = req.cookies
     if (!cookies?.jwt) return res.sendStatus(204) //No content
     res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true })
-    res.json({ message: 'Cookie cleared' })
+    res.status(200).json({ message: 'Cookie cleared' })
 }
 
 export default { login, logout, refresh }
