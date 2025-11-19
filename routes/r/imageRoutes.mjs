@@ -5,13 +5,8 @@ import verifyJWT from "../../middleware/verifyJWT.mjs";
 
 const router = Router()
 
-router.use(verifyJWT)
-
 router.route('/image')
-    .post(upload.single('image'), imageController.uploadImage)
-    .delete(imageController.deleteImage)
-
-router.route('/image/:fileName')
-    .get(imageController.getImage)
+    .post(verifyJWT, upload.single('image'), imageController.uploadImage)
+    .delete(verifyJWT, imageController.deleteImage)
 
 export default router

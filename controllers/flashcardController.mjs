@@ -2,6 +2,7 @@ import expressAsyncHandler from "express-async-handler";
 import UserData from "../models/UserData.mjs";
 import Flashcard from "../models/Flashcard.mjs";
 import mongoose from "mongoose";
+import Images from "../models/Images.mjs";
 
 const getFlashcard = expressAsyncHandler(async (req, res) => {
     const { dataId } = req
@@ -9,14 +10,14 @@ const getFlashcard = expressAsyncHandler(async (req, res) => {
 
     const flashcard = await Flashcard.findById(flashcardId).lean().exec()
 
-    if(!flashcard){
-        return res.status(404).json({message: 'Requested flashcard set was not found'})
+    if (!flashcard) {
+        return res.status(404).json({ message: 'Requested flashcard set was not found' })
     }
 
     const userData = await UserData.findById(dataId).select('flashcards').lean().exec()
 
-    if(!userData){
-        return res.status(403).json({message: 'Faulty user metadata. Please log out and log back in'})
+    if (!userData) {
+        return res.status(403).json({ message: 'Faulty user metadata. Please log out and log back in' })
     }
 
     const owner = await UserData.findById(flashcard.owner).select('username').lean().exec()
@@ -37,6 +38,7 @@ const getFlashcard = expressAsyncHandler(async (req, res) => {
 const createNewFlashcard = expressAsyncHandler(async (req, res) => {
     const { dataId } = req
     const { title, description, questions, subject } = req.body
+    let filenames = []
 
     if (!title || !description || !questions || !subject) {
         return res.status(400).json({ message: 'All fields are required' })
@@ -57,13 +59,15 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
     const parsedQuestions = questions.map(question => {
         const front = {
             text: question.front?.text || "",
-            ...(question.front?.image ? { image: question.front.image } : {}),
+            ...(question.front?.image ? { image: question.front.image } : {})
         };
-
         const back = {
             text: question.back?.text || "",
-            ...(question.back?.image ? { image: question.back.image } : {}),
+            ...(question.back?.image ? { image: question.back.image } : {})
         };
+
+        if (front?.image) filenames.push(front.image);
+        if (back?.image) filenames.push(back.image);
 
         return { front, back };
     });
@@ -90,6 +94,14 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
         })
 
         await userData.save({ session })
+
+        if (filenames.length != 0) {
+            await Images.updateMany(
+                { owner: dataId, imgName: { $in: filenames } },
+                { $set: { committed: true } },
+                { session }
+            );
+        }
 
         await session.commitTransaction()
         session.endSession();

@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { v4 as uuidv4 } from 'uuid'
 import fs from "fs";
 import path from "path";
+import allowedOrigins from "../config/allowedOrigins.mjs";
 
 const getImage = expressAsyncHandler(async (req, res) => {
     const { fileName } = req.params;
@@ -65,8 +66,8 @@ const deleteImage = expressAsyncHandler(async (req, res) => {
 
     const imageMetadata = await Images.findOne({ imgName }).lean().exec()
 
-    if(!imageMetadata){
-        return res.status(404).json({message: 'Image not found'})
+    if (!imageMetadata) {
+        return res.status(404).json({ message: 'Image not found' })
     }
 
     if (dataId != imageMetadata.owner) {
@@ -79,9 +80,9 @@ const deleteImage = expressAsyncHandler(async (req, res) => {
     }
 
     await fs.promises.unlink(imagePath);
-    await Images.deleteOne({imgName})
+    await Images.deleteOne({ imgName })
 
-    res.status(200).json({message: 'Image deleted'})
+    res.status(200).json({ message: 'Image deleted' })
 })
 
 export default { getImage, uploadImage, deleteImage }

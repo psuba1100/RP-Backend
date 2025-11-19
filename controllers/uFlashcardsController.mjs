@@ -110,6 +110,10 @@ const deleteFlashcardReference = expressAsyncHandler(async (req, res) => {
         return res.status(409).json({ message: "This flashacrd set is not stored in your account" })
     }
 
+    if (userData.flashcards[index].access == 'owner'){
+        return res.status(409).json({message: 'Removing set you are owner of from your library is prohibited. Please delete the set instead.'})
+    }
+
     const subjectIndex = userData.subjects.findIndex(s => s.subjectName == userData.flashcards[index].subject)
 
     userData.subjects[subjectIndex].boundReferences--

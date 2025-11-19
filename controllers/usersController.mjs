@@ -3,11 +3,14 @@ import User from "../models/User.mjs";
 import UserData from "../models/UserData.mjs";
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt'
+import jwt from "jsonwebtoken"
 
 const standardPwRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'",<.>/?\\|`~])[A-Za-z\d!@#$%^&*()_\-+=\[{\]};:'",<.>/?\\|`~]{8,32}$/;
 
 const createNewUser = expressAsyncHandler(async (req, res) => {
     const { username, password } = req.body
+
+    console.log(req.body)
 
     if (!username || !password) {
         return res.status(400).json({ message: 'All fields are required' })
@@ -49,9 +52,33 @@ const createNewUser = expressAsyncHandler(async (req, res) => {
             }
         ], { session })
 
+        const accessToken = jwt.sign(
+            {
+                "UserInfo": {
+                    "username": username,
+                    "dataId": dataId
+                }
+            },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: '10m' }
+        )
+
+        const refreshToken = jwt.sign(
+            { "username": username },
+            process.env.REFRESH_TOKEN_SECRET,
+            { expiresIn: '7d' }
+        )
+
+        res.cookie('jwt', refreshToken, {
+            httpOnly: true, //accessible only by web server 
+            secure: true, //https
+            sameSite: 'None', //cross-site cookie 
+            maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
+        })
+
         await session.commitTransaction()
         session.endSession();
-        return res.status(201).json({ message: 'User created' })
+        return res.status(201).json({ accessToken })
     }
     catch (e) {
         await session.abortTransaction()

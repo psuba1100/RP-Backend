@@ -10,6 +10,14 @@ const imageSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
+    },
+    committed: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 })
 

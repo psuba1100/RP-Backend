@@ -9,7 +9,7 @@ const todoTaskSchema = new mongoose.Schema({
 }, { _id: true });
 
 const subjectSchema = new mongoose.Schema({
-    subjectName: { type: String, unique: true },
+    subjectName: { type: String },
     boundReferences: { type: Number, default: 0 }
 }, { _id: false });
 
