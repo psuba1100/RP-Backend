@@ -33,7 +33,12 @@ const getFlashcards = expressAsyncHandler(async (req, res) => {
         { $count: "total" }
     ]))[0].total
 
-    res.json({ count, flashcards })
+    const flashcardsWithMetadata = await Promise.all(flashcards.map(async (flashcardSet) => {
+        const flashcard = await Flashcard.findById(flashcardSet.flashcardId).select('title description ownerUsername').lean().exec()
+        return {...flashcardSet, title: flashcard.title, description: flashcard.description, ownerUsername: flashcard.ownerUsername}
+    }))
+
+    res.json({ count, flashcards: flashcardsWithMetadata })
 })
 
 const createFlashcardReference = expressAsyncHandler(async (req, res) => {

@@ -16,6 +16,10 @@ const flashcardSchema = new mongoose.Schema({
         required: true,
         ref: 'UserData'
     },
+    ownerUsername: {
+        type: String,
+        default: 'Unknown'
+    },
     sharedWith: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'UserData'

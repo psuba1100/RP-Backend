@@ -44,7 +44,7 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'All fields are required' })
     }
 
-    const userData = await UserData.findById(dataId).select('flashcards subjects').exec()
+    const userData = await UserData.findById(dataId).select('flashcards subjects username').exec()
 
     if (!userData) {
         return res.status(403).json({ message: 'Faulty AUTH metadata' })
@@ -72,6 +72,8 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
         return { front, back };
     });
 
+    const ownerUsername = userData.username
+
     const session = await mongoose.startSession()
     session.startTransaction()
 
@@ -81,6 +83,7 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
                 owner: new mongoose.Types.ObjectId(String(dataId)),
                 title,
                 description,
+                ownerUsername,
                 questions: parsedQuestions
             }
         ], { session })
