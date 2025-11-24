@@ -3,6 +3,14 @@ import UserData from "../models/UserData.mjs";
 import Flashcard from "../models/Flashcard.mjs";
 import mongoose from "mongoose";
 import Images from "../models/Images.mjs";
+import { unlink } from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const IMAGE_DIR = path.join(__dirname, '..', 'images');
 
 const getFlashcard = expressAsyncHandler(async (req, res) => {
     const { dataId } = req
@@ -122,7 +130,108 @@ const updateFlashcard = expressAsyncHandler(async (req, res) => {
 })
 
 const deleteFlashcard = expressAsyncHandler(async (req, res) => {
+    const { flashcardId } = req.body;
+    const { dataId } = req
 
+    if (!flashcardId) {
+        return res.status(400).json({ message: 'All fields are required' })
+    }
+
+    const flashcard = await Flashcard.findById(flashcardId).select('sharedWith owner questions').lean().exec()
+
+    if (!flashcard) {
+        return res.status(404).json({ message: 'Requested document not found' })
+    }
+
+    if (flashcard.owner.toString() != dataId.toString()) {
+        return res.status(409).json({ message: 'Forbidden; you are not owner of this flashcard set' })
+    }
+
+    const imageFilenames = [];
+    for (const card of flashcard.questions) {
+        if (card.front?.image) {
+            imageFilenames.push(card.front.image);
+        }
+        if (card.back?.image) {
+            imageFilenames.push(card.back.image);
+        }
+    }
+
+    const userIds = new Set(flashcard.sharedWith.map(id => id.toString()));
+    userIds.add(dataId.toString());
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        if (imageFilenames.length > 0) {
+            await Images.updateMany(
+                { imgName: { $in: imageFilenames } },
+                { $set: { committed: false } }, // <-- Set to false
+                { session }
+            );
+        }
+
+        // 4. Efektívne nájdi VŠETKÝCH dotknutých používateľov naraz
+        const usersData = await UserData.find({
+            _id: { $in: [...userIds] }
+        }).select('flashcards subjects').session(session);
+
+        // 5. Priprav si všetky aktualizácie (budú spustené paralelne)
+        const updatePromises = [];
+
+        for (const user of usersData) {
+            // Nájdi presný odkaz na kartičku v poli používateľa
+            const flashcardReference = user.flashcards.find(
+                f => f.flashcardId.toString() === flashcardId
+            );
+
+            if (flashcardReference) {
+                const subjectName = flashcardReference.subject;
+                const promise = UserData.updateOne(
+                    {
+                        _id: user._id,
+                        "subjects.subjectName": subjectName
+                    },
+                    {
+                        $inc: { "subjects.$.boundReferences": -1 },
+                        $pull: { flashcards: { flashcardId } }
+                    },
+                    { session }
+                );
+                updatePromises.push(promise);
+            }
+        }
+
+        await Promise.all(updatePromises);
+        await Flashcard.findByIdAndDelete(flashcardId).session(session);
+        await session.commitTransaction();
+
+        res.status(200).json({ message: "Flashcard deleted successfully" });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error("Error deleting flashcard:", error);
+        res.status(500).json({ message: "Failed to delete flashcard" });
+    } finally {
+        session.endSession();
+    }
+
+    if (imageFilenames.length > 0) {
+        const cleanupPromises = imageFilenames.map(async (filename) => {
+            const filePath = path.join(IMAGE_DIR, filename);
+            try {
+                await unlink(filePath);
+            } catch (fileError) {
+                if (fileError.code !== 'ENOENT') {
+                    console.warn(`Error deleting file ${filename}:`, fileError.message);
+                }
+            }
+        });
+
+        await Promise.all(cleanupPromises);
+        await Images.deleteMany({ imgName: { $in: imageFilenames } });
+    }
 })
 
 export default { getFlashcard, createNewFlashcard, updateFlashcard, deleteFlashcard }

@@ -1,3 +1,9 @@
+import https from 'https'
+const options = {
+    key: fs.readFileSync('./key.pem'),
+    cert: fs.readFileSync('./cert.pem')
+};
+
 import 'dotenv/config'
 
 import express from 'express'
@@ -71,9 +77,13 @@ mongoose.connection.once('open', () => {
         }
     }, 60 * 60 * 1000);
 
-    app.listen(PORT, () => {
+    https.createServer(options, app).listen(3500, '0.0.0.0', () => {
+        console.log('HTTPS server running on https://192.168.100.77:3500');
+    });
+
+    /*app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server listening on ${PORT}`)
-    })
+    })*/
 })
 
 mongoose.connection.on('error', e => {

@@ -71,8 +71,8 @@ const createNewUser = expressAsyncHandler(async (req, res) => {
 
         res.cookie('jwt', refreshToken, {
             httpOnly: true, //accessible only by web server 
-            secure: true, //https
-            sameSite: 'None', //cross-site cookie 
+            secure: true, //https //true   /* CHANGE IN PROD */
+            sameSite: 'None', //cross-site cookie //None    /* CHANGE IN PROD */
             maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
         })
 
