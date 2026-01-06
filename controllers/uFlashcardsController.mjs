@@ -31,11 +31,11 @@ const getFlashcards = expressAsyncHandler(async (req, res) => {
         ...(s ? [{ $match: { "flashcards.subject": s } }] : []),
 
         { $count: "total" }
-    ]))[0].total
+    ]))[0]?.total || 0
 
     const flashcardsWithMetadata = await Promise.all(flashcards.map(async (flashcardSet) => {
         const flashcard = await Flashcard.findById(flashcardSet.flashcardId).select('title description ownerUsername').lean().exec()
-        return {...flashcardSet, title: flashcard.title, description: flashcard.description, ownerUsername: flashcard.ownerUsername}
+        return { ...flashcardSet, title: flashcard.title, description: flashcard.description, ownerUsername: flashcard.ownerUsername }
     }))
 
     res.json({ count, flashcards: flashcardsWithMetadata })
@@ -53,6 +53,12 @@ const createFlashcardReference = expressAsyncHandler(async (req, res) => {
 
     if (!userData) {
         return res.status(403).json({ message: 'Faulty user data metadata. Please log out and back in' })
+    }
+
+    const refIndex = userData.flashcards.findIndex(r => r.flashcardId == flashcardId)
+
+    if (refIndex != -1) {
+        return res.status(409).json({ message: 'This set is already stored in your library' })
     }
 
     const flashcard = await Flashcard.findById(flashcardId).select('sharedWith').exec()
@@ -115,8 +121,8 @@ const deleteFlashcardReference = expressAsyncHandler(async (req, res) => {
         return res.status(409).json({ message: "This flashacrd set is not stored in your account" })
     }
 
-    if (userData.flashcards[index].access == 'owner'){
-        return res.status(409).json({message: 'Removing set you are owner of from your library is prohibited. Please delete the set instead.'})
+    if (userData.flashcards[index].access == 'owner') {
+        return res.status(409).json({ message: 'Removing set you are owner of from your library is prohibited. Please delete the set instead.' })
     }
 
     const subjectIndex = userData.subjects.findIndex(s => s.subjectName == userData.flashcards[index].subject)
