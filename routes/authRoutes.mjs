@@ -1,15 +1,24 @@
 import {Router} from 'express'
 import authController from '../controllers/authController.mjs'
+import { smallBody } from '../config/payloadSize.mjs'
 
 const router = Router()
 
-router.route('/')
-    .post(authController.login)
+router.post(
+    '/',
+    smallBody,
+    authController.login
+)
 
-router.route('/refresh')
-    .get(authController.refresh)
+router.get(
+    '/refresh',
+    authController.refresh
+)
 
-router.route('/logout')
-    .post(authController.logout)
+router.post(
+    '/logout',
+    smallBody,
+    authController.logout
+)
 
 export default router

@@ -1,4 +1,5 @@
-const smallBody = json({ limit: "5kb" });
-const largeBody = json({ limit: "500kb" });
+import { json } from "express";
 
-export default {smallBody, largeBody}
+export const smallBody = json({ limit: "5kb" });
+export const mediumBody = json({limit: "150kb"})
+export const largeBody = json({ limit: "500kb" });
