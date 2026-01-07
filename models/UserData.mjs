@@ -20,6 +20,10 @@ const flashcardRefSchema = new mongoose.Schema({
 }, { _id: false });
 
 const userDataSchema = new mongoose.Schema({
+    blocked: {
+        isBlocked: {type: Boolean, default: false},
+        reason: {type: String, default: ''}
+    },
     username: { type: String, required: true },
     locker: {
         itemsInLocker: { type: [String], default: [] },
