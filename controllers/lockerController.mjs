@@ -37,7 +37,14 @@ const rewriteLocker = expressAsyncHandler(async (req, res) => {
 
     await UserData.updateOne({ _id: dataId }, { $set: { locker } })
 
-    return res.status(200).json(locker)
+    res.status(200).json(locker)
+
+    try {
+        await UserData.updateOne(
+            {_id: dataId},
+            {$inc: {'statistics.lockerUpdates': 1}}
+        )
+    } catch (e) { console.error(e) }
 })
 
 export default { getLocker, rewriteLocker }

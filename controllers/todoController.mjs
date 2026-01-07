@@ -28,13 +28,13 @@ const getTasks = expressAsyncHandler(async (req, res) => {
     const count = (await UserData.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(String(dataId)) } },
         { $unwind: "$todoTasks" },
-        
+
         ...(s ? [{ $match: { "todoTasks.subject": s } }] : []),
 
         { $count: "total" }
     ]))[0]?.total || 0
 
-    res.json({count, tasks})
+    res.json({ count, tasks })
 })
 
 const createNewTask = expressAsyncHandler(async (req, res) => {
@@ -65,6 +65,13 @@ const createNewTask = expressAsyncHandler(async (req, res) => {
     userData.save()
 
     res.status(201).json({ 'message': 'Successfully added new task' })
+
+    try {
+        await UserData.updateOne(
+            { _id: dataId },
+            { $inc: { 'statistics.createdTask': 1 } }
+        )
+    } catch (e) { console.error(e) }
 })
 
 const editTask = expressAsyncHandler(async (req, res) => {
@@ -93,6 +100,13 @@ const deleteTask = expressAsyncHandler(async (req, res) => {
 
     userData.save()
     res.status(200).json({ 'message': 'Successfully deleted task.' })
+
+    try {
+        await UserData.updateOne(
+            { _id: dataId },
+            { $inc: { 'statistics.completedTask': 1 } }
+        )
+    } catch (e) { console.error(e) }
 })
 
 export default { getTasks, createNewTask, editTask, deleteTask }

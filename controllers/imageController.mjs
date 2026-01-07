@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import { v4 as uuidv4 } from 'uuid'
 import fs from "fs";
 import path from "path";
-import allowedOrigins from "../config/allowedOrigins.mjs";
 
 const getImage = expressAsyncHandler(async (req, res) => {
     const { fileName } = req.params;
@@ -54,6 +53,14 @@ const uploadImage = expressAsyncHandler(async (req, res) => {
         message: "Image uploaded successfully",
         filename: filename,
     });
+
+    try {
+        await UserData.updateOne(
+            { _id: dataId },
+            { $inc: { 'statistics.uploadedImage': 1 } }
+        );
+    }
+    catch (e) { console.error(e) }
 })
 
 const deleteImage = expressAsyncHandler(async (req, res) => {

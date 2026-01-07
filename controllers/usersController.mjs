@@ -92,7 +92,7 @@ const createNewUser = expressAsyncHandler(async (req, res) => {
 
 const updateUser = expressAsyncHandler(async (req, res) => {
     const { password, newPassword } = req.body
-    const { username } = req
+    const { username, dataId } = req
 
     if (!password || !newPassword) {
         return res.status(400).json({ message: 'All fields are required' })
@@ -118,6 +118,13 @@ const updateUser = expressAsyncHandler(async (req, res) => {
 
     foundUser.save()
     res.status(200).json({ message: 'Password change successfull' })
+
+    try {
+        await UserData.updateOne(
+            { _id: dataId },
+            { $inc: { 'statistics.updatedPassword': 1 } }
+        )
+    } catch (e) { console.error(e) }
 })
 
 const deleteUser = expressAsyncHandler(async (req, res) => {
@@ -137,8 +144,8 @@ const deleteUser = expressAsyncHandler(async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password)
 
-    if(!match){
-        res.status(401).json({message: 'Incorrect password'})
+    if (!match) {
+        return res.status(401).json({ message: 'Incorrect password' })
     }
 
     const flashcardsRefs = userData.flashcards

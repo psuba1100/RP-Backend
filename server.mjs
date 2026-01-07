@@ -1,9 +1,3 @@
-import https from 'https'
-const options = {
-    key: fs.readFileSync('./key.pem'),
-    cert: fs.readFileSync('./cert.pem')
-};
-
 import 'dotenv/config'
 
 import express from 'express'
@@ -34,11 +28,13 @@ import { corsOptions } from './config/corsOptions.mjs'
 
 import { DBConn } from './middleware/DBConn.mjs'
 import Images from './models/Images.mjs'
+import payloadErrorHandler from './middleware/PayloadError.mjs'
 
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors(corsOptions))
 app.use('/', express.static(path.join(__dirname, 'public')))
+app.use(payloadErrorHandler)
 
 app.use('/users', UsersRouter)
 app.use('/users', UsersRouterA)
@@ -77,13 +73,9 @@ mongoose.connection.once('open', () => {
         }
     }, 60 * 60 * 1000);
 
-    https.createServer(options, app).listen(3500, '0.0.0.0', () => {
-        console.log('HTTPS server running on https://192.168.100.77:3500');
-    });
-
-    /*app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, '0.0.0.0', () => {
         console.log(`Server listening on ${PORT}`)
-    })*/
+    })
 })
 
 mongoose.connection.on('error', e => {

@@ -31,7 +31,49 @@ const userDataSchema = new mongoose.Schema({
     },
     todoTasks: { type: [todoTaskSchema], default: [] },
     subjects: { type: [subjectSchema], default: [] },
-    flashcards: { type: [flashcardRefSchema], default: [] }
+    flashcards: { type: [flashcardRefSchema], default: [] },
+    statistics: {
+        loadedOwnedSet: {
+            type: Number,
+            default: 0
+        },
+        loadedSharedSet: {
+            type: Number,
+            default: 0
+        },
+        createdSet: {
+            type: Number,
+            default: 0
+        },
+        uploadedImage: {
+            type: Number,
+            default: 0
+        },
+        lockerUpdates: {
+            type: Number,
+            default: 0
+        },
+        createdSubject: {
+            type: Number,
+            default: 0
+        },
+        createdTask: {
+            type: Number,
+            default: 0
+        },
+        completedTask: {
+            type: Number,
+            default: 0
+        },
+        savedSetToLibrary: {
+            type: Number,
+            default: 0
+        },
+        updatedPassword: {
+            type: Number,
+            default: 0
+        }
+    }
 });
 
 export default mongoose.model('UserData', userDataSchema);

@@ -93,6 +93,13 @@ const createFlashcardReference = expressAsyncHandler(async (req, res) => {
         session.endSession();
 
         res.status(201).json({ message: 'Successfully saved flashcard set into your account' })
+
+        try {
+            await UserData.updateOne(
+                { _id: dataId },
+                { $inc: { 'statistics.savedSetToLibrary': 1 } }
+            )
+        } catch (e) { console.error(e) }
     } catch (error) {
         await session.abortTransaction()
         session.endSession()

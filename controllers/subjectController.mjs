@@ -20,27 +20,34 @@ const addNewSubject = expressAsyncHandler(async (req, res) => {
     const { dataId } = req
     const { subjectName } = req.body
 
-    if(!subjectName){
-        return res.status(400).json({'message': 'All fields are required.'})
+    if (!subjectName) {
+        return res.status(400).json({ 'message': 'All fields are required.' })
     }
 
     const subjects = await UserData.findById(dataId).select('subjects').exec()
 
-    if(!subjects){
+    if (!subjects) {
         return res.status(404).json({ "message": "User data not found based on auth info." })
     }
 
     const index = subjects.subjects.findIndex(subject => subject.subjectName === subjectName)
 
-    if (index != -1){
-        return res.status(409).json({'message': 'Subject with this name already exists.'})
+    if (index != -1) {
+        return res.status(409).json({ 'message': 'Subject with this name already exists.' })
     }
 
-    subjects.subjects.push({subjectName})
+    subjects.subjects.push({ subjectName })
 
     await subjects.save()
 
-    res.status(200).json({"message": `Subject ${subjectName} added.`})
+    res.status(200).json({ "message": `Subject ${subjectName} added.` })
+
+    try {
+        await UserData.updateOne(
+            {_id: dataId},
+            {$inc: {'statistics.createdSubject': 1}}
+        )
+    } catch (e) { console.error(e) }
 })
 
 const deleteSubject = expressAsyncHandler(async (req, res) => {
@@ -66,8 +73,8 @@ const deleteSubject = expressAsyncHandler(async (req, res) => {
 
     const subject = userData.subjects[subjectIndex];
     if (subject.boundReferences > 0) {
-        return res.status(409).json({ 
-            message: 'The subject could not be removed due to bound references. Please remove those references first.' 
+        return res.status(409).json({
+            message: 'The subject could not be removed due to bound references. Please remove those references first.'
         });
     }
 

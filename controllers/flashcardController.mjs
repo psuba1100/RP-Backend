@@ -41,6 +41,18 @@ const getFlashcard = expressAsyncHandler(async (req, res) => {
         },
         questions: flashcard.questions
     })
+
+    try {
+        const field =
+            flashcard.owner.toString() === dataId.toString()
+                ? 'statistics.loadedOwnedSet'
+                : 'statistics.loadedSharedSet';
+
+        await UserData.updateOne(
+            { _id: dataId },
+            { $inc: { [field]: 1 } }
+        );
+    } catch (e) { console.log(e) }
 })
 
 const createNewFlashcard = expressAsyncHandler(async (req, res) => {
@@ -116,7 +128,16 @@ const createNewFlashcard = expressAsyncHandler(async (req, res) => {
 
         await session.commitTransaction()
         session.endSession();
-        return res.status(201).json({ message: 'Flashcard set created' })
+
+        res.status(201).json({ message: 'Flashcard set created' })
+
+        try {
+            await UserData.updateOne(
+                {_id: dataId},
+                {$inc: {'statistics.createdSet': 1}}
+            )
+        } catch (e) { console.error(e) }
+
     } catch (error) {
         await session.abortTransaction()
         session.endSession()
