@@ -4,6 +4,8 @@ import UserData from "../models/UserData.mjs";
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt'
 import jwt from "jsonwebtoken"
+import Flashcard from "../models/Flashcard.mjs";
+import Images from "../models/Images.mjs"
 
 const standardPwRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'",<.>/?\\|`~])[A-Za-z\d!@#$%^&*()_\-+=\[{\]};:'",<.>/?\\|`~]{8,32}$/;
 
@@ -119,7 +121,132 @@ const updateUser = expressAsyncHandler(async (req, res) => {
 })
 
 const deleteUser = expressAsyncHandler(async (req, res) => {
+    const { dataId, username } = req
+    const { password } = req.body
 
+    const user = await User.findOne({ username }).lean().exec()
+    const userData = await UserData.findById(dataId).select('flashcards').lean().exec()
+
+    if (!user) {
+        res.status(404).json({ message: 'We did not found your account in the database' })
+    }
+
+    if (!userData) {
+        res.status(404).json({ message: 'We did not found your account in the database' })
+    }
+
+    const match = await bcrypt.compare(password, user.password)
+
+    if(!match){
+        res.status(401).json({message: 'Incorrect password'})
+    }
+
+    const flashcardsRefs = userData.flashcards
+
+    const ownerIds = [];
+    const sharedIds = [];
+
+    for (const { flashcardId, access } of flashcardsRefs) {
+        if (access === 'owner') {
+            ownerIds.push(flashcardId);
+        } else if (access === 'shared') {
+            sharedIds.push(flashcardId);
+        }
+    }
+
+    if (sharedIds.length) {
+        await Flashcard.updateMany(
+            { _id: { $in: sharedIds } },
+            { $pull: { sharedWith: dataId } }
+        );
+    }
+
+    const flashcards = await Flashcard.find(
+        { owner: dataId },
+        { _id: 1, sharedWith: 1 }
+    ).lean().exec();
+
+    const sharedMap = new Map(); // userId -> Set(flashcardId)
+
+    for (const flashcard of flashcards) {
+        for (const userId of flashcard.sharedWith) {
+            const key = userId.toString();
+            if (!sharedMap.has(key)) {
+                sharedMap.set(key, new Set());
+            }
+            sharedMap.get(key).add(flashcard._id.toString());
+        }
+    }
+
+    const users = await UserData.find(
+        { _id: { $in: [...sharedMap.keys()] } },
+        { flashcards: 1 }
+    ).lean().exec();
+
+    const bulkOps = [];
+
+    for (const user of users) {
+        const affectedFlashcards = sharedMap.get(user._id.toString());
+        if (!affectedFlashcards) continue;
+
+        for (const ref of user.flashcards) {
+            if (!affectedFlashcards.has(ref.flashcardId.toString())) continue;
+
+            bulkOps.push({
+                updateOne: {
+                    filter: {
+                        _id: user._id,
+                        "subjects.subjectName": ref.subject
+                    },
+                    update: {
+                        $inc: { "subjects.$.boundReferences": -1 },
+                        $pull: { flashcards: { flashcardId: ref.flashcardId } }
+                    }
+                }
+            });
+        }
+    }
+
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        if (bulkOps.length) {
+            await UserData.bulkWrite(bulkOps, { session });
+        }
+
+        await Flashcard.deleteMany(
+            { owner: dataId },
+            { session }
+        );
+
+        await Images.updateMany(
+            { owner: dataId },
+            { $set: { committed: false } },
+            { session }
+        );
+
+        await UserData.deleteOne(
+            { _id: dataId },
+            { session }
+        );
+
+        await User.deleteOne(
+            { username },
+            { session }
+        )
+
+        await session.commitTransaction();
+        res.status(200).json({ message: "User and all owned flashcards deleted" });
+
+    } catch (err) {
+        await session.abortTransaction();
+        console.error(err);
+        res.status(500).json({ message: "Deletion failed" });
+    } finally {
+        session.endSession();
+    }
 })
 
 export default { createNewUser, updateUser, deleteUser }
