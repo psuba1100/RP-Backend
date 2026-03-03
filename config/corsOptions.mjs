@@ -1,7 +1,15 @@
 import allowedOrigins from "./allowedOrigins.mjs";
 
 export const corsOptions = {
-    origin: true,
+    origin: (origin, callback) => {
+        console.log(`origin: ${origin}`)
+        if (allowedOrigins.includes(origin)|| !origin) {
+            callback(null, true)
+        }
+        else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200
 }

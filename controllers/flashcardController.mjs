@@ -52,7 +52,7 @@ const getFlashcard = expressAsyncHandler(async (req, res) => {
             { _id: dataId },
             { $inc: { [field]: 1 } }
         );
-    } catch (e) { console.log(e) }
+    } catch (e) { console.error(e) }
 })
 
 const createNewFlashcard = expressAsyncHandler(async (req, res) => {

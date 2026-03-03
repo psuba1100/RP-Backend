@@ -19,8 +19,10 @@ import FlashcardRouter from './routes/r/flashcardRoutes.mjs'
 import ImageRouter from './routes/r/imageRoutes.mjs'
 import UnportectedImageRouter from './routes/r/unprotectedImageRoutes.mjs'
 import AuthRouter from './routes/authRoutes.mjs'
+import ReportRouter from './routes/reportRoutes.mjs'
 
 const app = express()
+app.set("trust proxy", 1);
 const PORT = process.env.PORT
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -29,12 +31,31 @@ import { corsOptions } from './config/corsOptions.mjs'
 import { DBConn } from './middleware/DBConn.mjs'
 import Images from './models/Images.mjs'
 import payloadErrorHandler from './middleware/PayloadError.mjs'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
+import { logError } from './middleware/logger.mjs'
 
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors(corsOptions))
+app.use(helmet())
 app.use('/', express.static(path.join(__dirname, 'public')))
 app.use(payloadErrorHandler)
+
+const globalLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 250,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logError(new Error('Request exceeded rate limit'), req)
+
+        res.status(429).json({message: "Too many requests. Please try again later."})
+    },
+    message: 'Too many requests. Try again later.',
+})
+
+app.use(globalLimiter)
 
 app.use('/users', UsersRouter)
 app.use('/users', UsersRouterA)
@@ -46,6 +67,8 @@ app.use('/r/image', UnportectedImageRouter)
 app.use('/r', FlashcardRouter)
 app.use('/r', ImageRouter)
 app.use('/auth', AuthRouter)
+app.use('/report', ReportRouter)
+
 
 DBConn()
 

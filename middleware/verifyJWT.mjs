@@ -16,7 +16,7 @@ const verifyJWT = async (req, res, next) => {
         } catch (err) {
             return res.status(403).json({ message: 'Forbidden' });
         }
-
+        
         const userData = await UserData.findById(decoded.UserInfo.dataId).select('blocked').lean().exec();
 
         if (!userData) {

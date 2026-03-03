@@ -2,6 +2,7 @@ import User from '../models/User.mjs'
 import bcrypt from 'bcrypt'
 import jwt from "jsonwebtoken"
 import asyncHandler from 'express-async-handler'
+import { logError } from '../middleware/logger.mjs'
 
 const login = asyncHandler(async (req, res) => {
     const { username, password } = req.body
@@ -18,7 +19,10 @@ const login = asyncHandler(async (req, res) => {
 
     const match = await bcrypt.compare(password, foundUser.password)
 
-    if (!match) return res.status(401).json({ message: 'Invalid password' })
+    if (!match){
+        logError(new Error(`${username} tried to log in with incorrect password`), req)
+        return res.status(401).json({ message: 'Invalid password' })
+    }
 
     const accessToken = jwt.sign(
         {
@@ -38,10 +42,12 @@ const login = asyncHandler(async (req, res) => {
     )
 
     res.cookie('jwt', refreshToken, {
-        httpOnly: true, //accessible only by web server 
-        secure: true, //https //true   /* CHANGE IN PROD */
-        sameSite: 'None', //cross-site cookie //None    /* CHANGE IN PROD */
-        maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry: set to match rT
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        domain: ".winkify.review",
+        path: '/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
     res.status(200).json({ accessToken })
@@ -50,11 +56,8 @@ const login = asyncHandler(async (req, res) => {
 const refresh = (req, res) => {
     const cookies = req.cookies
 
-    console.log(cookies)
-
     if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
 
-    console.log('passed')
     const refreshToken = cookies.jwt
 
     jwt.verify(
@@ -86,7 +89,7 @@ const refresh = (req, res) => {
 const logout = (req, res) => {
     const cookies = req.cookies
     if (!cookies?.jwt) return res.sendStatus(204) //No content
-    res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true })
+    res.clearCookie('jwt', { httpOnly: true, sameSite: 'strict', secure: true, path: '/auth/refresh', domain: '.winkify.review' })
     res.status(200).json({ message: 'Cookie cleared' })
 }
 
